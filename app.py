@@ -1,9 +1,7 @@
 import os
 from flask import Flask, request, render_template_string
-import requests
 from azure.search.documents import SearchClient
 from azure.core.credentials import AzureKeyCredential
-import os
 from dotenv import load_dotenv
 load_dotenv()
 from openai import AzureOpenAI
@@ -17,7 +15,7 @@ app = Flask(__name__)
 SEARCH_ENDPOINT = os.getenv("AZURE_SEARCH_ENDPOINT")
 SEARCH_KEY = os.getenv("AZURE_SEARCH_KEY")
 SEARCH_INDEX = os.getenv("AZURE_SEARCH_INDEX")
-
+print("Search Endpoint:", SEARCH_ENDPOINT)
 OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
 OPENAI_KEY = os.getenv("AZURE_OPENAI_KEY")
 OPENAI_DEPLOYMENT = os.getenv("AZURE_OPENAI_DEPLOYMENT", "gpt-35-turbo")
@@ -63,7 +61,7 @@ def home():
 
             # Format sources for RAG
             sources_formatted = "=================\n".join(
-                [f'TITLE: {doc["title"]}, CONTENT: {doc["chunk"]}'
+                [f'Document: {doc["title"]}, CONTENT: {doc["chunk"]}'
                 for doc in search_results]
             )
 
@@ -71,10 +69,30 @@ def home():
 
             # --- Step 2: Build prompt ---
             prompt = f"""
-            Role: You are a cybersecurity AI assistant responsible for supporting incident investigations.  
-            Responsibilities: Review and analyze the provided documents to extract relevant information, identify potential security issues, and answer the user’s questions based on the available evidence. If the documents do not contain the required information, clearly state "I don't know."
+            You are a cybersecurity expert AI assistant specializing in incident response and forensic analysis. Your role is to carefully examine evidence, extract insights, and provide clear, reliable answers.
+
+            Instructions:
+
+            Review and analyze the provided documents in detail.
+
+            Identify and summarize relevant information that helps in understanding, investigating, or resolving the security incident.
+
+            Highlight any potential vulnerabilities, attack vectors, or suspicious activities mentioned in the sources.
+
+            If the documents do not provide enough evidence to answer the question, respond with “I don’t know.”
+
+            Ensure your answer is concise, factual, and focused on incident investigation and cybersecurity context.
+
+            Present your final response in a structured format (e.g., short summary + bullet points for key findings).
+
+            Context (documents for analysis):
+
             {sources_formatted}
-            Answer:
+
+            Output Format:
+
+            Answer: [Provide a clear and concise response to the user’s question based only on the documents above.]
+            
             """
 
             # --- Step 3: Call Azure OpenAI ---
@@ -82,7 +100,7 @@ def home():
                 model=OPENAI_DEPLOYMENT,
                 messages=[
                     {"role": "system", "content": prompt},
-                    {"role": "user", "content":"Question: {question}" },
+                    {"role": "user", "content":f"Question: {question}" },
                 ],
                 max_tokens=400,
                 temperature=0.2,
@@ -114,4 +132,5 @@ def home():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=8000)
+
