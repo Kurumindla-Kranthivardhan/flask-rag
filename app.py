@@ -27,7 +27,11 @@ client = AzureOpenAI(
     azure_endpoint=OPENAI_ENDPOINT,
     api_key=OPENAI_KEY,
 )
-
+search_client = SearchClient(
+                endpoint=SEARCH_ENDPOINT,
+                index_name=SEARCH_INDEX,
+                credential=AzureKeyCredential(SEARCH_KEY)
+            )
 # -----------------------------
 # Routes
 # -----------------------------
@@ -41,11 +45,7 @@ def home():
 
         if question:
             # --- Step 1: Retrieve documents from Azure Search ---
-            search_client = SearchClient(
-                endpoint=SEARCH_ENDPOINT,
-                index_name=SEARCH_INDEX,
-                credential=AzureKeyCredential(SEARCH_KEY)
-            )
+            
 
             # -----------------------------
             # Example query
